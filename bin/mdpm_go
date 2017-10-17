@@ -1,0 +1,35 @@
+#! /usr/bin/env python
+
+import sys
+import argparse
+from mdpm.startFramesAndEval import *
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--vid_src', required=False, dest='vid_src', type=str, default=None, help='Full path of source video')
+    parser.add_argument('--im_dir', required=False, dest='im_dir', type=str, default=None, help='Full path of image sequences')
+    parser.add_argument('--FlipperColor', required=False, dest='FlipperColor', type=str, default='black', help='white/yellow/black/blue')
+    parser.add_argument('--vid_dev', required=False, dest='vid_dev', type=int, default=None, help='Device index of the camera')
+    parser.add_argument('--slide_size', required=False, dest='slide_size', type=int, default=15, help='Size of the sliding size')
+    parser.add_argument('--win_size', required=False, dest='win_size', type=int, default=30, help='Fixed window size x*x')
+    
+    
+    args = parser.parse_args()
+    go = Starter(args.FlipperColor, args.slide_size, args.win_size)
+    
+
+    if (args.vid_src is None and args.vid_dev is None and args.im_dir is None):
+        print('Please specify atleast one source of video. see Readme')
+
+    elif(args.vid_src is None and args.vid_dev is None and args.im_dir is not None):
+        go.image_streamimg(args.im_dir)
+    
+    elif(args.vid_src is None and args.vid_dev is not None and args.im_dir is None):
+        pass
+    
+    elif(args.vid_src is not None and args.vid_dev is None and args.im_dir is None):
+        go.video_streamimg(args.vid_src)
+    
+    else:
+        pass

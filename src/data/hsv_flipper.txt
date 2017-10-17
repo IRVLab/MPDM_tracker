@@ -1,0 +1,5 @@
+colorname low_h low_s low_v high_h high_s high_v
+blue 95 190 150 115 255 220 
+yellow 20 90 150 50 150 220
+black 100 10 50 130 70 100 
+white 75 100 235 105 150 255

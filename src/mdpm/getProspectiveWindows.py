@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from freqDomainComputation import searchMotionDirection
 from modelHMM import HMM_model
+from HClustering import HeiCluster
 
 '''
 Gets the image, performs spatial domain thresholding based on the volor of flippers
@@ -16,6 +17,7 @@ class ImageProcessor():
         self.potWinSize = 10 # potential windows per frame
         # flipper color, sliding window size, and rectangular window size
         self.FlipperColor, self.slide_size, self.win_size = FlipperColor, slide_size, win_size
+        self.neighThr = 100 # for outlier rejection of selected windows
 
         self.initWindows()  # other initializations
         self.getHSVThresholds() # HSV-space thresholding 
@@ -26,7 +28,7 @@ class ImageProcessor():
     # for checking different frames
     def showFrame(self, name, frame):
         cv2.imshow(name, frame)
-        cv2.waitKey(50)
+        cv2.waitKey(30)
 
 
     # initialize different data structures
@@ -69,18 +71,38 @@ class ImageProcessor():
 
 
 
-    # show the potential windows
+    # show the potential windows ()
     def drawPotWins(self):
         for id in self.PotWindowSeq[:, self.current_pointer]:
             rect_x, rect_y = self.win_to_xy[int(id)]
             cv2.rectangle(self.current, (rect_x, rect_y), (rect_x+self.win_size,rect_y+self.win_size), (0, 255, 255), -1)
 
 
-    # show the final windows
-    def drawFinalWins(self):
-        for id in self.finalWinfowSeq:
-            rect_x, rect_y = self.win_to_xy[int(id)]
-            cv2.rectangle(self.current, (rect_x, rect_y), (rect_x+self.win_size,rect_y+self.win_size), (0, 0, 255), -1)
+    
+    # Show all prospective windows
+    # Take the maximum cluster of windows for a naive outlier rejection (if vote=True)
+    def drawFinalWindow(self, vote=False):
+        M_2d = np.zeros((self.finalWinfowSeq.shape[0], 2))
+        for id, val in enumerate(self.finalWinfowSeq):
+            M_2d[id, :] = self.win_to_xy[int(val)]
+        
+        if vote==False:
+            outputWin = M_2d
+        else:
+            hc = HeiCluster(self.neighThr)
+            clusters, clus_size = hc.getClusters(M_2d)
+            outputWin = np.array(clusters[np.argmax(np.array(clus_size))])
+
+        for idx in range(outputWin.shape[0]):
+            rect_x, rect_y = int(outputWin[idx, 0]), int(outputWin[idx, 1])
+            cv2.rectangle(self.current, (rect_x, rect_y), (rect_x+self.win_size,rect_y+self.win_size), (0, 255, 255), 2)
+
+        left_, right_ = np.min(outputWin, 0), np.max(outputWin, 0)
+        c_x = 0 if (left_[0]-20) < 0 else int(left_[0]-20)
+        c_y = 0 if (left_[1]-20) < 0 else int(left_[1]-20)  
+        r_x = self.imW if (right_[0]+40) >  self.imW else int(right_[0]+40)
+        r_y = self.imH if (right_[1]+40) >  self.imH else int(right_[1]+40) 
+        cv2.rectangle(self.current, (c_x, c_y), (r_x, r_y), (0, 0, 255), 2)
         
 
     # show the spatial position of the windows
@@ -143,7 +165,8 @@ class ImageProcessor():
 
         if (self.current_pointer >= self.slide_size-1):
             self.finalWinfowSeq = self.MDirection.sweepSpatioTemporalVolume(self.IntensityValues, self.PotWindowSeq) # better sweep here
-            self.drawFinalWins()
+            if self.finalWinfowSeq.shape[0] >0: 
+                self.drawFinalWindow(vote=True)
         
         #self.drawPotWins()
         self.showFrame('original', self.current)

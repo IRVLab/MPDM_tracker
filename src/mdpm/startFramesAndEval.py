@@ -10,10 +10,12 @@ import matplotlib.pyplot as plt
 from mdpm.getProspectiveWindows import ImageProcessor
 
 
-
-
+'''
+Initiates calls to start mpdm. 
+image_streamimg and video_streamimg are for offline testing on 
+image sequences and video files, respectively.
+'''
 class Starter:
-
     def __init__(self, FlipperColor, slide_size, win_size):
         self.im_proc = ImageProcessor(FlipperColor, slide_size, win_size)
 
